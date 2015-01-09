@@ -1,0 +1,29 @@
+#wrapper {
+    display: table;
+    margin: 0 auto 0 auto;
+    height: auto;
+}
+
+#hp {
+    float: left;
+    margin: 5px 0 0 10px;
+    color: white;
+    position: absolute;
+    z-index: 10;
+}
+
+#shop {
+    margin: 0 auto 0 auto;
+    height: 51px;
+    display: table;
+}
+
+.shopItem {
+    display: table;
+    float: left;
+    width: 50px;
+    height: 50px;
+    border-right: 1px solid white;
+    border-top: 1px solid white;
+    background-color: black;
+}
