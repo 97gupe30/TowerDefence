@@ -1,3 +1,14 @@
+@import url(http://fonts.googleapis.com/css?family=Press+Start+2P);
+
+body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
 #wrapper {
     display: table;
     margin: 0 auto 0 auto;
@@ -24,10 +35,20 @@
     z-index: 10;
 }
 
+#infoBox {
+    font-family: 'Press Start 2P', cursive;
+    text-align: center;
+    position: absolute;
+    top: 480px;
+    left: 0;
+    z-index: 10;
+    width: 100%;
+}
+
 #shop {
+    left: 13px;
     margin: 0 auto 0 auto;
     height: 51px;
-    display: table;
 }
 
 .shopItem {

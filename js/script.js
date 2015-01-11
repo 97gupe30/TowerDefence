@@ -1,25 +1,37 @@
 var level = 1;
-var enemies = [[], 3, 0, 2.5, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln. INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
-var genEnemy = true;
-var hp = 100;
-var moveActive = false;
+var enemies = [[], 100, 0, 5, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln. INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
 var towers = [];
+var menus = [new Menu('dead'),
+             new Menu('restart')
+            ];
 var towerCount = 0;
+
+// Värde variabler
+var hp = 100;
 var money = 100;
+
+// Booleans
+var genEnemy = true; // Ifall man ska kunna generera nya fiender.
+var moveActive = false; // Ifall man kan flytta torn eller inte.
+var confirm = false;
+
+// timer variabler;
+var infoBox;
+var cdTimeout;
 
 function init() {
     game = document.getElementById('camera');
     ctx = game.getContext('2d');
     game.addEventListener("mousedown", getPosition, false);
-
+                                                        
     window.setInterval(animate, 25);
     window.setInterval(generate, 1000);
 }
 
 
 function keyHandler(event) {
+    var key = event.keyCode;
     if(moveActive) {
-        var key = event.keyCode;
         if(key == 65) {
             towers[enemies[4]].x -= 50;
         } else if(key == 68) {
@@ -32,6 +44,9 @@ function keyHandler(event) {
             moveActive = false;
         }
     }
+    if(key == 82) {
+        document.getElementById('infoBox').innerHTML = 'Are you sure you want to restart?';
+    }
 }
 
 function Enemy(x, y, Ehp, id) {
@@ -41,9 +56,11 @@ function Enemy(x, y, Ehp, id) {
     this.id = id;
 
     this.render = function() {
+        var enemyImg = new Image();
+        enemyImg.src = "images/banana1.png";
         ctx.fillStyle = "black";
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 10, 0, 2*Math.PI);
+        ctx.drawImage(enemyImg, this.x - 12.5, this.y - 12.5);
         ctx.closePath();
         ctx.fill();
     }
@@ -93,7 +110,7 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
     this.render = function() {
         if(this.type == 'tower1') {
             var img = new Image();
-            img.src = "images/tower1.jpg";
+            img.src = "images/tower1.png";
             img.width = 50;
             img.height = 50;
             ctx.beginPath();
@@ -121,7 +138,7 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
                         enemies[0][i].hp -= 3;
                         console.log(enemies[0][i].hp);
                         this.cd = false;
-                        setTimeout(function() {
+                        cdTimeout = setTimeout(function() {
                             towers[j].cd = true;
                         }, 500);
                     }
@@ -135,8 +152,8 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
         ctx.moveTo(this.x + 25, this.y + 25);
         ctx.lineTo(enemies[0][i].x, enemies[0][i].y);
         ctx.closePath();
-        ctx.strokeStyle = "purple";
-        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#000055";
+        ctx.lineWidth = 2;
         ctx.stroke();
     }
 }
@@ -148,9 +165,9 @@ function getPosition(event) {
     x -= game.offsetLeft;
     y -= game.offsetTop;
     for(var i = 0; i < towers.length; i++) {
-        if(x > towers[i].x && x < towers[i].x + 50 && y > towers[i].y && y < towers[i].y +50) {
+        if(x > towers[i].x && x < towers[i].x + 50 && y > towers[i].y && y < towers[i].y + 50) {
             moveActive = true;
-            enemies[4] = i;
+            enemies[4] = i; // OBS: BYTT NAMN PÅ DENNA VARIABELN. DEN HÖR INTE TILL ENEMIES.
         }
     }
 }
@@ -159,8 +176,40 @@ function buyTower(type, cost) {
     if(money >= cost) {
         towers.push(new Tower(0, 50, type, towerCount));
         money -= cost;
+    } else {
+        clearTimeout(infoBox);
+        document.getElementById('infoBox').innerHTML = "You need more money to do that.";
+        infoBox = setTimeout(function() {
+            document.getElementById('infoBox').innerHTML = "";
+        }, 5000);
     }
     towerCount++;
+}
+
+function Menu(type) {
+    this.type = type;
+
+    this.startMenu = function() {
+        if(this.type == 'dead') {
+            var currentSpeed = enemies[3];
+            enemies[3] = 0;
+            genEnemy = false;
+            moveActive = false;
+            document.getElementById('infoBox').innerHTML = "You died. Press 'R' to restart.";
+            clearTimeout(cdTimeout);
+            for(var i = 0; i < towers.length; i++) {
+                towers[i].cd = false;
+            }
+        } else if(this.type == 'restart') {
+            enemies = [[], 100, 0, 5, 0];
+            towers = [];
+            level = 1;
+            hp = 100;
+            money = 100;
+            genEnemy = true;
+            moveActive = false;
+        }
+    }
 }
 
 
@@ -180,8 +229,12 @@ function animate() {
         towers[j].attack(j);
     }
 
-    document.getElementById('hp').innerHTML = "HP: " + hp;
-    document.getElementById('money').innerHTML = "Kassa: " + money + "kr";
+
+    if(hp <= 0) {
+        menus[0].startMenu();
+    }
+    document.getElementById('hp').innerHTML = hp + "HP";
+    document.getElementById('money').innerHTML = "Wallet: " + money + "kr";
 }
 
 function generate() {
