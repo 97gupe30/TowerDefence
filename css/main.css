@@ -4,9 +4,21 @@
     height: auto;
 }
 
+#camera {
+    background-image: url('../images/background.jpg');
+}
+
 #hp {
     float: left;
     margin: 5px 0 0 10px;
+    color: white;
+    position: absolute;
+    z-index: 10;
+}
+
+#money {
+    float: left;
+    margin: 20px 0 0 10px;
     color: white;
     position: absolute;
     z-index: 10;
@@ -25,5 +37,5 @@
     height: 50px;
     border-right: 1px solid white;
     border-top: 1px solid white;
-    background-color: black;
+    background-color: green;
 }
