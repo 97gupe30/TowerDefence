@@ -58,5 +58,25 @@ body {
     height: 50px;
     border-right: 1px solid white;
     border-top: 1px solid white;
-    background-color: green;
+    bordeR: 1px solid black;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 9px;
+    position: relative;
+}
+
+.shopItem p {
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+}
+
+#tower1{
+    background-image: url(../images/tower1.png);
+}
+
+#no, #yes {
+    padding: 3px;
 }
