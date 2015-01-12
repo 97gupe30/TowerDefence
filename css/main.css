@@ -77,6 +77,11 @@ body {
     background-image: url(../images/tower1.png);
 }
 
+#ice_tower {
+    background-image: url(../images/ice_tower.png);
+    color: white;
+}
+
 #no, #yes {
     padding: 3px;
 }
