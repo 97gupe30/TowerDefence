@@ -1,15 +1,11 @@
 var level = 1;
 var enemies = [[], 3, 0, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln. INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
 var towers = [];
-var menus = [new Menu('dead'),
-             new Menu('restart'),
-             new Menu('pause'),
-             new Menu('waveClear')
-            ];
-var menuP = 'pause';
-var towerCount = 0;
+var towerCount = 0; // Räknar antal torn som finns ute.
 var currentEnemies = []; // sparar allt om fienderna när man pausar.
 var speed = []; // Sparar fiendernas hastigheter när man pausar
+var menus = new Menu();
+var menuP = 'pause'; // Håller koll på om vi ska pausa eller ta bort pausen.
 
 // Värde variabler
 var hp = 100;
@@ -19,7 +15,7 @@ var money = 100;
 var genEnemy = true; // Ifall man ska kunna generera nya fiender.
 var moveActive = false; // Ifall man kan flytta torn eller inte.
 var confirm = false; // Till reset menyn
-var confirmWave = false;
+var confirmWave = false; // Om vi ska fortsätta på näste wave eller inte.
 var confirmMove; // Till menyer.
 
 // timer variabler;
@@ -72,14 +68,14 @@ function keyHandler(event) {
             confirm = false;
             document.getElementById('infoBox').style.top = '480px';
             if(confirmMove == 'left') {
-                menus[1].startMenu();
+                menus.restart();
             } else {
                 document.getElementById('infoBox').innerHTML = "";
             }
         }
     }
     if(key == 80 && confirmWave != true) {
-        menus[2].startMenu();
+        menus.pause();
     }
     if(confirmWave) {
         if(key == 80) {
@@ -92,62 +88,66 @@ function keyHandler(event) {
     }
 }
 
-function Menu(type) {
-    this.type = type;
+function Menu() {
+    this.dead = function() {
+        for(var i = 0; i < enemies[0].length; i++) {
+            enemies[0][i].speed = 0;
+        }
+        genEnemy = false;
+        moveActive = false;
+        document.getElementById('infoBox').innerHTML = "You died. Press 'R' to restart.";
+        clearTimeout(cdTimeout);
+        for(var i = 0; i < towers.length; i++) {
+            towers[i].cd = false;
+        }
+    }
 
-    this.startMenu = function() {
-        if(this.type == 'dead') {
+    this.restart = function() {
+        document.getElementById('infoBox').innerHTML = "";
+        enemies = [[], 3, 0, 5, 0];
+        towers = [];
+        level = 1;
+        hp = 100;
+        money = 100;
+        genEnemy = true;
+        moveActive = false;
+        confirm = false;
+    }
+
+    this.pause = function() {
+        if(menuP == 'pause') {
+            menuP = 'unpause';
+            document.getElementById('infoBox').innerHTML = "Press 'P' to unpause.";
+            for(var i = 0; i < enemies.length; i++) {
+                currentEnemies[i] = enemies[i];
+            }
             for(var i = 0; i < enemies[0].length; i++) {
+                speed[i] = enemies[0][i].speed;
                 enemies[0][i].speed = 0;
             }
+            moveActive = false;
             genEnemy = false;
-            moveActive = false;
-            document.getElementById('infoBox').innerHTML = "You died. Press 'R' to restart.";
-            clearTimeout(cdTimeout);
-            for(var i = 0; i < towers.length; i++) {
-                towers[i].cd = false;
-            }
-        } else if(this.type == 'restart') {
+        } else if(menuP == 'unpause') {
             document.getElementById('infoBox').innerHTML = "";
-            enemies = [[], 3, 0, 5, 0];
-            towers = [];
-            level = 1;
-            hp = 100;
-            money = 100;
-            genEnemy = true;
-            moveActive = false;
-            confirm = false;
-        } else if(this.type == 'pause') {
-            if(menuP == 'pause') {
-                menuP = 'unpause';
-                document.getElementById('infoBox').innerHTML = "Press 'P' to unpause.";
-                for(var i = 0; i < enemies.length; i++) {
-                    currentEnemies[i] = enemies[i];
-                }
-                for(var i = 0; i < enemies[0].length; i++) {
-                    speed[i] = enemies[0][i].speed;
-                    enemies[0][i].speed = 0;
-                }
-                moveActive = false;
-                genEnemy = false;
-            } else if(menuP == 'unpause') {
-                document.getElementById('infoBox').innerHTML = "";
-                menuP = 'pause';
-                for(var i = 0; i < currentEnemies.length; i++) {
-                    enemies[i] = currentEnemies[i];
-                }
-                for(var i = 0; i < enemies[0].length; i++) {
-                    enemies[0][i].speed = speed[i]
-                }
-                if(enemies[1] != enemies[2]) {
-                    genEnemy = true;
-                }
+            menuP = 'pause';
+            for(var i = 0; i < currentEnemies.length; i++) {
+                enemies[i] = currentEnemies[i];
             }
-        } else if(this.type == 'waveClear') {
-            document.getElementById('infoBox').innerHTML = "Press 'P' to start the next wave.";
-            confirmWave = true;
-            level++;
+            for(var i = 0; i < enemies[0].length; i++) {
+                enemies[0][i].speed = speed[i]
+            }
+            if(enemies[1] != enemies[2]) {
+                genEnemy = true;
+            }
         }
+    }
+
+    this.waveClear = function() {
+        document.getElementById('infoBox').innerHTML = "Press 'P' to start the next wave.";
+        money += 10;
+        confirmWave = true;
+        enemies[2] = 0;
+        level++;
     }
 }
 
@@ -212,7 +212,7 @@ function Enemy(type, x, y, Ehp, speed, dmg, price, id, active) {
         }
 
         if(this.x >= 875 && this.y >= 520) {
-            hp -= 5;
+            hp -= this.dmg;
             this.die();
         }
     }
@@ -224,7 +224,7 @@ function Enemy(type, x, y, Ehp, speed, dmg, price, id, active) {
                 enemies[0].splice(i, 1);
             }
             if(enemies[0].length == 0 && genEnemy == false) { // När waven är klar.
-                menus[3].startMenu();
+                menus.waveClear();
             }
         }
 
@@ -269,7 +269,7 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
 
                     if(this.cd) { // Lägger till en 0.5 sekunds CD på tornet
                         enemies[0][i].hp -= 3;
-                        
+
                         if(enemies[0][i].hp <= 0) {
                             money += enemies[0][i].price;
                         }
@@ -324,19 +324,16 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
 function timerHandler(type, i, j, memory, sentid) {
     if(type == 'slow') {
         cdTimeout = setTimeout(function() {
-            while(enemies[0].length <= i) {
-                i--;
-            }
-            while(enemies[0][i].id != sentid) {
-                enemies[0][i].id--;
-            }
-            alert(enemies[0][i].id + " " + sentid);
-            if(enemies[0][i].id == sentid) {
-                enemies[0][i].speed = memory;
+            // Denna foor loopen fixar en bugg som fanns med ice-tower då fiendens hastighet inte komm tillbaka.
+            for(var k = 0; k < enemies[0].length; k++) {
+                if(enemies[0][k].id == sentid) {
+                    enemies[0][k].speed = memory;
+                }
             }
         }, 5000);
     }
 }
+
 
 function getPosition(event) {
     var x = event.x;
@@ -385,7 +382,7 @@ function animate() {
 
     if(hp <= 0) {
         if(confirm != true) {
-            menus[0].startMenu();
+            menus.dead();
         }
     }
 
