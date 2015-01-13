@@ -164,10 +164,11 @@ function Enemy(type, x, y, Ehp, speed, dmg, price, id, active) {
     this.active = false;
 
     this.render = function() {
+        ctx.lineWidth = 1;
         ctx.rect(this.x - 15, this.y - 18, 20, 5);
-        ctx.strokeStyle = "green";
+        ctx.strokeStyle = "black";
         ctx.stroke();
-        ctx.fillStyle = "green";
+        ctx.fillStyle = "red";
         ctx.fillRect(this.x - 15, this.y - 18, this.hp/this.startHP * 20, 5);
 
         var enemyImg = new Image();
@@ -323,7 +324,14 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
 function timerHandler(type, i, j, memory, sentid) {
     if(type == 'slow') {
         cdTimeout = setTimeout(function() {
-            if(enemies[0][i].id = sentid) {
+            while(enemies[0].length <= i) {
+                i--;
+            }
+            while(enemies[0][i].id != sentid) {
+                enemies[0][i].id--;
+            }
+            alert(enemies[0][i].id + " " + sentid);
+            if(enemies[0][i].id == sentid) {
                 enemies[0][i].speed = memory;
             }
         }, 5000);
