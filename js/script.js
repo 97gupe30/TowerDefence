@@ -22,6 +22,7 @@ var confirmMove; // Till menyer.
 var infoBox;
 var cdTimeout;
 var spawn;
+var savecdTimeout;
 
 function init() {
     game = document.getElementById('camera');
@@ -96,7 +97,9 @@ function Menu() {
         genEnemy = false;
         moveActive = false;
         document.getElementById('infoBox').innerHTML = "You died. Press 'R' to restart.";
-        clearTimeout(cdTimeout);
+        for(var i = 0; i < cdTimeout.length; i++) {
+            clearTimeout(cdTimeout);
+        }
         for(var i = 0; i < towers.length; i++) {
             towers[i].cd = false;
         }
@@ -125,6 +128,7 @@ function Menu() {
                 speed[i] = enemies[0][i].speed;
                 enemies[0][i].speed = 0;
             }
+            clearTimeout(cdTimeout);
             moveActive = false;
             genEnemy = false;
         } else if(menuP == 'unpause') {
@@ -266,10 +270,8 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
                 d = Math.sqrt(dx*dx + dy*dy);
                 if(d <= 70) { // Ifall fienden är inom tornets Attack Range målar vi ut skottet och lägger till en CD.
                     this.attackAnimation(i);
-
                     if(this.cd) { // Lägger till en 0.5 sekunds CD på tornet
                         enemies[0][i].hp -= 3;
-
                         if(enemies[0][i].hp <= 0) {
                             money += enemies[0][i].price;
                         }
@@ -281,15 +283,19 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
                 }
             }
         } else if(this.type == 'ice_tower') {
+            this.attackAnimation(i);
             for(var i = 0; i < enemies[0].length; i++) { // Räknar ut om fienden är inom tornets Attack Range.
                 dx = enemies[0][i].x - this.x - 25;
                 dy = enemies[0][i].y - this.y - 25;
                 d = Math.sqrt(dx*dx + dy*dy);
                 if(d <= 70) {
-                    this.attackAnimation(i);
-                    if(enemies[0][i].speed != 2) {
+                    if(enemies[0][i].speed != 2 && this.cd) {
                         timerHandler('slow', i, j, enemies[0][i].speed, enemies[0][i].id);
                         enemies[0][i].speed = 2;
+                        this.cd = false;
+                        setTimeout(function() {
+                            towers[j].cd = true;
+                        }, 1000);
                     }
                 }
             }
@@ -313,7 +319,7 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
             ctx.strokeStyle = "#8ca3e2";
             ctx.stroke();
             ctx.closePath();
-            rStroke += 5;
+            rStroke += 2;
             if(rStroke >= 70) {
                 rStroke = 0;
             }
