@@ -82,6 +82,11 @@ body {
     color: white;
 }
 
+#canon_tower {
+    background-image: url(../images/canon_tower-top.png);
+    color: white;
+}
+
 #no, #yes {
     padding: 3px;
 }
