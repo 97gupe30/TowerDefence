@@ -1,6 +1,7 @@
 var level = 1;
-var enemies = [[], 1, 0, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln. INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
+var enemies = [[], 3, 0, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln. INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
 var towers = [];
+var towerShots = [];
 var towerCount = 0; // Räknar antal torn som finns ute.
 var currentEnemies = []; // sparar allt om fienderna när man pausar.
 var speed = []; // Sparar fiendernas hastigheter när man pausar
@@ -51,7 +52,7 @@ function keyHandler(event) {
         } else if(key == 13) {
             moveActive = false;
         }
-        
+
         if(key == 37 && towers[enemies[3]].type == 'canon_tower') { // Roterar canon-tower (Med piltangenterna)
             canonActive = 'images/canon_tower-left.png';
         } else if(key == 40 && towers[enemies[3]].type == 'canon_tower') {
@@ -62,7 +63,7 @@ function keyHandler(event) {
             canonActive = 'images/canon_tower-top.png';
         }
     }
-    
+
     if(key == 82) { // "R", Starta reset menyn
         document.getElementById('infoBox').innerHTML = 'Are you sure you want to restart?<br><br><span id="yes">YES</span> <span id="no">NO</span>';
         document.getElementById('infoBox').style.top = '450px';
@@ -70,7 +71,7 @@ function keyHandler(event) {
         confirm = true;
         confirmMove = 'right';
     }
-    
+
     if(confirm) { // Reset menyn.
         if(key == 37) {
             confirmMove = 'left';
@@ -90,11 +91,11 @@ function keyHandler(event) {
             }
         }
     }
-    
+
     if(key == 80 && confirmWave != true) {
         menus.pause();
     }
-    
+
     if(confirmWave) {
         if(key == 80) {
             document.getElementById('infoBox').innerHTML = "";
@@ -274,8 +275,6 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
                 break;
             case 'canon_tower':
                 img.src = canonActive;
-                ctx.rect(this.x - 75, this.y - 50, 75, 150);
-                ctx.stroke();
                 break;
         }
         img.width = 50;
@@ -327,14 +326,39 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
             for(var i = 0; i < enemies[0].length; i++) {
                 dx = enemies[0][i].x - this.x + 30;
                 dy = enemies[0][i].y - this.y + 15;
-                if(dx <= 150 && dx >= 0 && dy <= 100 && dy >= 0 && canonActive == 'images/canon_tower-down.png') { // Räknar ut om fienden är inom tornets attack range och om tornet kollar neråt.
-                    console.log('down');
-                } else if(dx <= 150 && dx >= 0 && dy <= 0 && dy >= -100 && canonActive == 'images/canon_tower-top.png') { // Uppåt
-                    console.log('top');
-                } else if(dx <= 175 && dx >= 95 && dy <= 125 && dy >= -50 && canonActive == 'images/canon_tower-right.png') { // Höger
-                    console.log('right');
-                } else if(dx >= -45 && dx <= 30 && dy <= 125 && dy >= -50 && canonActive == 'images/canon_tower-left.png') { // Vänster
-                    console.log('left');
+                if(this.cd) {
+                    if(dx <= 150 && dx >= 0 && dy <= 100 && dy >= 0 && canonActive == 'images/canon_tower-down.png') { // Räknar ut om fienden är inom tornets attack range och om tornet kollar neråt.
+                        console.log('down');
+                        
+                        this.cd = false;
+                        setTimeout(function() {
+                            towers[j].cd = true;
+                        }, 1000);
+                        
+                    } else if(dx <= 150 && dx >= 0 && dy <= 0 && dy >= -100 && canonActive == 'images/canon_tower-top.png') { // Uppåt
+                        console.log('top');
+                        
+                        this.cd = false;
+                        setTimeout(function() {
+                            towers[j].cd = true;
+                        }, 1000);
+                        towerShots.push(new Towershot(this.x + 25, this.y, enemies[0][i].speed));
+                    } else if(dx <= 175 && dx >= 95 && dy <= 125 && dy >= -50 && canonActive == 'images/canon_tower-right.png') { // Höger
+                        console.log('right');
+                        
+                        this.cd = false;
+                        setTimeout(function() {
+                            towers[j].cd = true;
+                        }, 1000);
+                        
+                    } else if(dx >= -45 && dx <= 30 && dy <= 125 && dy >= -50 && canonActive == 'images/canon_tower-left.png') { // Vänster
+                        console.log('left');
+                        
+                        this.cd = false;
+                        setTimeout(function() {
+                            towers[j].cd = true;
+                        }, 1000);
+                    }
                 }
             }
         }
@@ -365,10 +389,24 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
     }
 }
 
+function Towershot(x, y, vs) {
+    this.x = x;
+    this.y = y;
+    this.vs = vs;
+
+    this.render = function() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 5, 0, 2*Math.PI);
+        ctx.closePath();
+        ctx.fill();
+        this.y -= this.vs;
+    }
+}
+
 function timerHandler(type, i, j, memory, sentid) {
     if(type == 'slow') {
         cdTimeout = setTimeout(function() {
-            // Denna foor loopen fixar en bugg som fanns med ice-tower då fiendens hastighet inte komm tillbaka.
+            // Denna foor loopen fixar en bugg som fanns med ice-tower då fiendens hastighet inte kom tillbaka.
             for(var k = 0; k < enemies[0].length; k++) {
                 if(enemies[0][k].id == sentid) {
                     enemies[0][k].speed = memory;
@@ -424,6 +462,10 @@ function animate() {
         towers[j].attack(j);
     }
 
+    for(var i = 0; i < towerShots.length; i++) {
+        towerShots[i].render();
+    }
+
     if(hp <= 0) {
         if(confirm != true) {
             menus.dead();
@@ -437,13 +479,13 @@ function animate() {
 function generate() {
     if(enemies[0].length < enemies[1] && genEnemy) {
         if(level == 1 || level == 2) {
-            enemies[0].push(new Enemy('banana', 0, 125, 10, 2, 5, 5, enemies[2])); // type, x, y, Ehp, speed, dmg, price, id
+            enemies[0].push(new Enemy('banana', 0, 125, 10, 5, 5, 5, enemies[2])); // type, x, y, Ehp, speed, dmg, price, id
         } else if(level >= 3 && level <= 5) {
             enemies[0].push(new Enemy('apple', 0, 125, 15, 6, 6, 10, enemies[2]));
             window.clearInterval(spawn);
             spawn = window.setInterval(generate, 800);
         } else if(level > 5) {
-            enemies[0].push(new Enemy('orange', 0, 125, 30, 8, 10, 20, enemies[2]));
+            enemies[0].push(new Enemy('orange', 0, 125, 35, 8, 10, 20, enemies[2]));
             window.clearInterval(spawn);
             spawn = window.setInterval(generate, 500);
         }
