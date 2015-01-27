@@ -1,5 +1,5 @@
 var level = 1;
-var enemies = [[], 3, 0, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln. INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
+var enemies = [[], 1, 0, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln. INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
 var towers = [];
 var towerShots = [];
 var towerCount = 0; // Räknar antal torn som finns ute.
@@ -31,6 +31,21 @@ var savecdTimeout;
 // Ljud variabler
 var backgroundMusic;
 
+var spritesheets = [new SpriteSheet('images/explosion.png', 64, 64, 2, 25)];
+
+var map = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1],
+    [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+    [1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1]
+]
+
 function init() {
     game = document.getElementById('camera');
     ctx = game.getContext('2d');
@@ -45,8 +60,42 @@ function init() {
 
     window.setInterval(animate, 25);
     spawn = window.setInterval(generate, 1000);
-}
+} 
 
+function SpriteSheet(path, frameWidth, frameHeight, frameSpeed, endFrame) {
+    var image = new Image();
+    image.src = path;
+    var framesperRow;
+    image.onload = function() {
+        framesPerRow = Math.floor(image.width / frameWidth);
+    }
+
+    var currentFrame = 0;  // the current frame to draw
+    var counter = 0;       // keep track of frame rate
+
+    // Update the animation
+    this.update = function() {
+
+        // update to the next frame if it is time
+        if (counter == (frameSpeed - 1))
+            currentFrame = (currentFrame + 1) % endFrame;
+
+        // update the counter
+        counter = (counter + 1) % frameSpeed;
+    }
+    // Draw the current frame
+    this.draw = function(x, y) {
+        // get the row and col of the frame
+        var row = Math.floor(currentFrame / framesPerRow);
+        var col = Math.floor(currentFrame % framesPerRow);
+        ctx.drawImage(
+            image,
+            col * frameWidth, row * frameHeight,
+            frameWidth, frameHeight,
+            x, y,
+            frameWidth, frameHeight);
+    };
+}
 
 function keyHandler(event) {
     var key = event.keyCode;
@@ -186,11 +235,14 @@ function Menu() {
 
 function Enemy(type, x, y, Ehp, speed, dmg, price, id, active) {
     this.type = type;
-    this.x = x;
+    this.x = x * 50;
     this.y = y;
+    this.trackX = 0;
+    this.trackY = 2;
     this.hp = Ehp;
     this.startHP = Ehp;
     this.speed = speed;
+    this.dirr = 'x';
     this.dmg = dmg;
     this.price = price;
     this.id = id;
@@ -230,7 +282,40 @@ function Enemy(type, x, y, Ehp, speed, dmg, price, id, active) {
     }
 
 
-    this.walk = function() {
+    this.walk = function(i) {
+        /* console.log(Math.floor(this.y / 50) + " " + Math.floor(this.x / 50));
+
+        if(map[Math.floor(this.y / 50)][Math.floor(this.x / 50)] == 0) {
+            if(enemies[0][i].dirr == 'x') {
+                this.x += this.speed;
+            } else if(enemies[0][i].dirr == 'y') {
+                this.y += this.speed;
+            }
+
+        } else {
+            if(map[Math.floor(this.y / 50) - 1][Math.floor(this.x / 50)] == 0) {
+                alert("Fritt höger");
+                this.dirr = 'x';
+                this.speed = +this.speed;
+            } else if(map[Math.floor(this.y / 50) - 1][Math.floor(this.x / 50) - 2] == 0) {
+                alert("Fritt vänster");
+                this.dirr = 'x';
+                this.speed = -this.speed;
+            } else if(map[Math.floor(this.y / 50)][Math.floor(this.x / 50) - 1] == 0) {
+                alert("Fritt Neråt");
+                this.dirr = 'y';
+                this.speed = +this.speed;
+            } else if(map[Math.floor(this.y / 50) + 2][Math.floor(this.x / 50) - 1] == 0) {
+                alert("Fritt uppåt");
+                this.dirr = 'y';
+                this.speed = -this.speed;
+            } else {
+                alert("No match");
+            }
+        }
+*/
+
+
         if(this.x < 875 && this.y < 340 && this.y > 320) {
             this.x += this.speed;
         } else if(this.x <= 900 && this.x > 125 && this.y >= 225 && this.y <= 250) {
@@ -264,6 +349,8 @@ function Enemy(type, x, y, Ehp, speed, dmg, price, id, active) {
 
     }
 }
+
+
 
 
 // KÖP SAKER
@@ -336,26 +423,29 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
                 }
             }
         } else if(this.type == 'canon_tower') {
-            for(var i = 0; i < enemies[0].length; i++) {
-                dx = enemies[0][i].x - this.x + 30;
-                dy = enemies[0][i].y - this.y + 15;
-                
-                if(this.cd) {
-                    this.cd = false;
-                    window.setTimeout(function() {
-                        this.cd = true;
-                    }, 1000);
-                    var time = Math.abs(dx) / enemies[0][i].speed * 40;
-                    window.setTimeout(function() {
-                        alert(1);
-                    }, time);
+            for(var i = 0; i < enemies[0].length; i++) { // Räknar ut om fienden är inom tornets Attack Range.
+                dx = enemies[0][i].x - this.x - 25;
+                dy = enemies[0][i].y - this.y - 25;
+                d = Math.sqrt(dx*dx + dy*dy);
+                if(d <= 70) { // Ifall fienden är inom tornets Attack Range målar vi ut skottet och lägger till en CD.
+                    alert(1);
+                    if(this.cd) { // Lägger till en 0.5 sekunds CD på tornet
+                        enemies[0][i].hp -= 3;
+                        if(enemies[0][i].hp <= 0) {
+                            money += enemies[0][i].price;
+                        }
+                        this.cd = false;
+                        cdTimeout = setTimeout(function() {
+                            towers[j].cd = true;
+                        }, 500);
+                    }
                 }
-                
-                
-                
-                
-                
-                /*if(this.cd) {
+            }
+
+
+
+
+            /*if(this.cd) {
                     if(dx <= 75 && dx >= 0 && dy <= 50 && dy >= 0 && towers[j].imgSrc == 'images/canon_tower-down.png') { // Räknar ut om fienden är inom tornets attack range och om tornet kollar neråt.
                         console.log('down');
                         alert(1);
@@ -386,9 +476,9 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
                         }, 1000);
                     }
                 } */
-            }
+
         }
-        
+
     }
 
     var rStroke = 0;
@@ -416,7 +506,7 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
     }
 }
 
-function Towershot(x, y, vs, dmg, id) {
+/*function Towershot(x, y, vs, dmg, id) {
     this.x = x;
     this.y = y;
     this.vs = vs;
@@ -438,7 +528,7 @@ function Towershot(x, y, vs, dmg, id) {
             }
         }
     }
-}
+} */
 
 function timerHandler(type, i, j, memory, sentid) {
     if(type == 'slow') {
@@ -488,9 +578,15 @@ function buyTower(type, cost) {
 
 function animate() {
     ctx.clearRect(0, 0, 1000, 500);
+    for(var i = 0; i < spritesheets.length; i++) {
+       spritesheets[i].update();
+        spritesheets[i].draw(200, 200);
+    }
+
+ 
     for(var i = 0; i < enemies[0].length; i++) {
         enemies[0][i].render();
-        enemies[0][i].walk();
+        enemies[0][i].walk(i);
         if(enemies[0].length > 0) { 
             if(enemies[0][i].hp <= 0) {
                 enemies[0][i].die();
@@ -511,6 +607,8 @@ function animate() {
             menus.dead();
         }
     }
+
+
 
     document.getElementById('hp').innerHTML = hp + "HP";
     document.getElementById('money').innerHTML = "Wallet: " + money + "G";
