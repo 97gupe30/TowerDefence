@@ -31,7 +31,9 @@ var savecdTimeout;
 // Ljud variabler
 var backgroundMusic;
 
-var spritesheets = [new SpriteSheet('images/explosion.png', 64, 64, 2, 25)];
+var spritesheets = [];
+var animations = [];
+var spriteCount = 0;
 
 var map = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -62,38 +64,65 @@ function init() {
     spawn = window.setInterval(generate, 1000);
 } 
 
-function SpriteSheet(path, frameWidth, frameHeight, frameSpeed, endFrame) {
-    var image = new Image();
-    image.src = path;
-    var framesperRow;
-    image.onload = function() {
-        framesPerRow = Math.floor(image.width / frameWidth);
-    }
 
-    var currentFrame = 0;  // the current frame to draw
-    var counter = 0;       // keep track of frame rates
+
+function SpriteSheet(path, frameWidth, frameHeight, id) {
+    this.image = new Image();
+    this.frameWidth = frameWidth;
+    this.frameHeight = frameHeight;
+    this.id = id;
+
+    // calculate the number of frames in a row after the image loads
+    var self = this;
+    this.image.onload = function() {
+        self.framesPerRow = Math.floor(self.image.width / self.frameWidth);
+    };
+
+    this.image.src = path;
+}
+
+function Animation(spritesheet, frameSpeed, startFrame, endFrame, x, y, id) {
+
+    var animationSequence = [];  // array holding the order of the animation
+    var currentFrame = 0;        // the current frame to draw
+    var counter = 0;             // keep track of frame rate
+    this.x = x;
+    this.y = y;
+    this.id = id;
+
+    // create the sequence of frame numbers for the animation
+    for (var frameNumber = startFrame; frameNumber <= endFrame; frameNumber++)
+        animationSequence.push(frameNumber);
 
     // Update the animation
     this.update = function() {
 
         // update to the next frame if it is time
         if (counter == (frameSpeed - 1))
-            currentFrame = (currentFrame + 1) % endFrame;
-
+            currentFrame = (currentFrame + 1) % animationSequence.length;
+        if(currentFrame >= endFrame - 1) {
+            for(var k = 0; k < animations.length; k++) {
+                if(animations[k].id == this.id) {
+                    animations.splice(k, 1);
+                }
+            }
+        }
         // update the counter
         counter = (counter + 1) % frameSpeed;
-    }
-    // Draw the current frame
-    this.draw = function(x, y) {
+    };
+
+    // draw the current frame
+    this.draw = function() {
         // get the row and col of the frame
-        var row = Math.floor(currentFrame / framesPerRow);
-        var col = Math.floor(currentFrame % framesPerRow);
+        var row = Math.floor(animationSequence[currentFrame] / spritesheet.framesPerRow);
+        var col = Math.floor(animationSequence[currentFrame] % spritesheet.framesPerRow);
+
         ctx.drawImage(
-            image,
-            col * frameWidth, row * frameHeight,
-            frameWidth, frameHeight,
-            x, y,
-            frameWidth, frameHeight);
+            spritesheet.image,
+            col * spritesheet.frameWidth, row * spritesheet.frameHeight,
+            spritesheet.frameWidth, spritesheet.frameHeight,
+            this.x, this.y,
+            spritesheet.frameWidth, spritesheet.frameHeight);
     };
 }
 
@@ -112,15 +141,7 @@ function keyHandler(event) {
             moveActive = false;
         }
 
-        if(key == 37 && towers[enemies[3]].type == 'canon_tower') { // Roterar canon-tower (Med piltangenterna)
-            towers[enemies[3]].imgSrc = 'images/canon_tower-left.png';
-        } else if(key == 40 && towers[enemies[3]].type == 'canon_tower') {
-            towers[enemies[3]].imgSrc = 'images/canon_tower-down.png';
-        } else if(key == 39 && towers[enemies[3]].type == 'canon_tower') {
-            towers[enemies[3]].imgSrc = 'images/canon_tower-right.png';
-        } else if(key == 38 && towers[enemies[3]].type == 'canon_tower') {
-            towers[enemies[3]].imgSrc = 'images/canon_tower-top.png';
-        }
+
     }
 
     if(key == 82) { // "R", Starta reset menyn
@@ -428,16 +449,35 @@ function Tower(x, y, type, id) { // CD == Om tornet kan skada fiender
                 dy = enemies[0][i].y - this.y - 25;
                 d = Math.sqrt(dx*dx + dy*dy);
                 if(d <= 70) { // Ifall fienden är inom tornets Attack Range målar vi ut skottet och lägger till en CD.
-                    alert(1);
                     if(this.cd) { // Lägger till en 0.5 sekunds CD på tornet
                         enemies[0][i].hp -= 3;
+
+                        spritesheets.push(new SpriteSheet('images/explosion.png', 64, 64, spriteCount));
+                        var tempx = this.x,
+                            tempy = this.y,
+                            tempCount = spriteCount;
+                        spriteCount++;
+                        spritesheets.push(new SpriteSheet('images/canon_charge.png', 50, 50, spriteCount));
+                        animations.push(new Animation(spritesheets[spriteCount], 2, 0, 19, this.x, this.y, spriteCount));
+                        
+
+                        spriteCount++;
+                        setTimeout(function() {
+                            for(var k = 0; k < spritesheets.length; k++) {
+                                if(spritesheets[k].id == tempCount) {
+                                    animations.push(new Animation(spritesheets[k], 2, 0, 25, tempx, tempy, k));
+                                }
+                            }
+                        }, 1050);
+
                         if(enemies[0][i].hp <= 0) {
                             money += enemies[0][i].price;
                         }
+
                         this.cd = false;
                         cdTimeout = setTimeout(function() {
                             towers[j].cd = true;
-                        }, 500);
+                        }, 1300);
                     }
                 }
             }
@@ -540,6 +580,15 @@ function timerHandler(type, i, j, memory, sentid) {
                 }
             }
         }, 5000);
+    } else if(type == 'spritesheet') {
+        setTimeout(function() {
+            for(var k = 0; k < spritesheets.length; k++) {
+                if(spritesheets[k].id == i) {
+                    spritesheets.splice(k, 1);
+                    animations.splice(k, 1);
+                }
+            }
+        }, j);
     }
 }
 
@@ -578,12 +627,9 @@ function buyTower(type, cost) {
 
 function animate() {
     ctx.clearRect(0, 0, 1000, 500);
-    for(var i = 0; i < spritesheets.length; i++) {
-       spritesheets[i].update();
-        spritesheets[i].draw(200, 200);
-    }
 
- 
+
+
     for(var i = 0; i < enemies[0].length; i++) {
         enemies[0][i].render();
         enemies[0][i].walk(i);
@@ -593,14 +639,19 @@ function animate() {
             }
         }
     }
+
     for(var j = 0; j < towers.length; j++) {
         towers[j].render();
         towers[j].attack(j);
     }
 
-    for(var i = 0; i < towerShots.length; i++) {
-        towerShots[i].render();
+    if(animations.length > 0) {
+        for(var i = 0; i < animations.length; i++) {
+            animations[i].draw();
+            animations[i].update();
+        }
     }
+
 
     if(hp <= 0) {
         if(confirm != true) {
