@@ -71,7 +71,7 @@ function SpriteSheet(path, frameWidth, frameHeight, frameSpeed, endFrame) {
     }
 
     var currentFrame = 0;  // the current frame to draw
-    var counter = 0;       // keep track of frame rate
+    var counter = 0;       // keep track of frame rates
 
     // Update the animation
     this.update = function() {
