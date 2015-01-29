@@ -8,15 +8,24 @@
     </head>
     <body onload="init()" onkeydown="keyHandler(event)">
         <div id="wrapper">
+            <div id="over">
+                <div class="settings"onclick="
+                                              if(stroke) {
+                                              stroke = false;
+                                              } else {
+                                              stroke = true;
+                                              }"><p>Display stroke</p></div>
+            </div>
             <div id="hp"></div>
             <div id="money"></div>
-        <canvas id="camera" width="1000" height="500" style="display: table;">
-        </canvas>
+            <img id="settings" src="images/settings.png" onclick="menus.settings()">
+            <canvas id="camera" width="1000" height="500" style="display: table;">
+            </canvas>
             <div id="infoBox"></div>
             <div id="shop">
-                <div class="shopItem" id="tower1" onmousedown="buyTower('tower1', 50)"><p>50G</p></div>
-                <div class="shopItem" id="ice_tower" onmousedown="buyTower('ice_tower', 30)"><p>30G</p></div>
-                <div class="shopItem" id="canon_tower" onmousedown="buyTower('canon_tower', 150)"><p>150G</p></div>
+                <div class="shopItem" id="tower1" onmousedown="buyTower('tower1', 50, 70)"><p>50G</p></div>
+                <div class="shopItem" id="ice_tower" onmousedown="buyTower('ice_tower', 30, 70)"><p>30G</p></div>
+                <div class="shopItem" id="canon_tower" onmousedown="buyTower('canon_tower', 150, 100)"><p>150G</p></div>
                 <div class="shopItem"></div>
                 <div class="shopItem"></div>
                 <div class="shopItem"></div>

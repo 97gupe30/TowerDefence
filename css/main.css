@@ -90,3 +90,31 @@ body {
 #no, #yes {
     padding: 3px;
 }
+
+#settings {
+    position: absolute;
+    margin-left: 960px;
+    top: 15px;
+    height: 30px;
+    width: 30px;
+}
+
+#over {
+    background-color: black;
+    opacity: 0.8;
+    display: none;
+    position: absolute;
+    top: 8px;
+    width: 1000px;
+    height: 500px;
+    text-align: center;
+}
+
+.settings {
+    cursor: pointer;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 12px;
+    margin-top: 10px;
+    opacity: 1;
+    color: white;
+}
