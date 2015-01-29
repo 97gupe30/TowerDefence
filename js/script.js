@@ -10,7 +10,7 @@ var menuP = 'pause'; // Håller koll på om vi ska pausa eller ta bort pausen.
 var canMove = true;
 
 //Skott variabler
-var canonShots = 0;
+var superBeam = false; // true == CD är på.
 
 
 // Värde variabler
@@ -158,14 +158,14 @@ function keyHandler(event) {
             towers[enemies[3]].y += 50;
         } else if(key == 13) {
             if(map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] == 0) {
-               document.getElementById('infoBox').innerHTML = "You can't place a tower on the road.";
+                document.getElementById('infoBox').innerHTML = "You can't place a tower on the road.";
             } else {
                 moveActive = false;
                 document.getElementById('infoBox').innerHTML = "";
             }
 
         }
-        }
+    }
 
 
 
@@ -211,10 +211,10 @@ function keyHandler(event) {
             confirmWave = false;
             canMove = false;
 
-    }      
+        }      
     } else if(confirmWave && map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] == 0 && key == 80) {
-            document.getElementById('infoBox').innerHTML = "You can't start the next wave with a tower on the road.";
-        }
+        document.getElementById('infoBox').innerHTML = "You can't start the next wave with a tower on the road.";
+    }
 }
 
 
@@ -458,6 +458,8 @@ function Tower(x, y, r, type, id) { // CD == Om tornet kan skada fiender
             case 'canon_tower':
                 img.src = this.imgSrc;
                 break;
+            case 'super_beam':
+                img.src = 'images/super_beam.png';
         }
 
         if(stroke) {
@@ -565,42 +567,40 @@ function Tower(x, y, r, type, id) { // CD == Om tornet kan skada fiender
                         }
                     }
                 }
+            } else if(this.type == 'super_beam') {
+                for(var i = 0; i < enemies[0].length; i++) {
+                    dx = enemies[0][i].x - this.x - 25;
+                    dy = enemies[0][i].y - this.y - 25;
+                    d = Math.sqrt(dx*dx + dy*dy);
+                    var tempId = [],
+                        towerId = this.id;
+                    tempId.push(enemies[0][i].id);
+                    if(d <= this.r) {
+                        if(this.cd) {
+                            spritesheets.push(new SpriteSheet('images/super_beam_animation.png', 50, 50, spriteCount));
+                            animations.push(new Animation(spritesheets[spriteCount], 15, 0, 24, this.x, this.y, spriteCount));
+                            spriteCount++;
+                            
+                            this.attackAnimation(i);
+                            setTimeout(function() {
+                                for(var k = 0; k < enemies[0].length; k++) {
+                                    for(var l = 0; l < tempId.length; l++) {
+                                        if(enemies[0][k].id == tempId[l]) {
+                                            enemies[0][k].hp -= 50;
+                                            towers[j].cd = false;
+                                        }
+                                    }
 
+                                }
+                            }, 1400);
+                            setTimeout(function() {
+                                towers[j].cd = true;
+                                console.log('CD');
+                            }, 10000);
+                        }
 
-
-
-                /*if(this.cd) {
-                    if(dx <= 75 && dx >= 0 && dy <= 50 && dy >= 0 && towers[j].imgSrc == 'images/canon_tower-down.png') { // Räknar ut om fienden är inom tornets attack range och om tornet kollar neråt.
-                        console.log('down');
-                        alert(1);
-
-
-                    } else if(dx <= 75 && dx >= 60 && dy <= 0 && dy >= -50 && towers[j].imgSrc == 'images/canon_tower-top.png') { // Uppåt
-                        this.cd = false;
-                        setTimeout(function() {
-                            towers[j].cd = true;
-                        }, 1000);
-
-                        towerShots.push(new Towershot(this.x + 25, this.y, enemies[0][i].speed, 11, canonShots));
-                        canonShots++;
-                    } else if(dx <= 175 && dx >= 95 && dy <= 125 && dy >= -50 && towers[j].imgSrc == 'images/canon_tower-right.png') { // Höger
-                        console.log('right');
-
-                        this.cd = false;
-                        setTimeout(function() {
-                            towers[j].cd = true;
-                        }, 1000);
-
-                    } else if(dx >= -45 && dx <= 30 && dy <= 125 && dy >= -50 && towers[j].imgSrc == 'images/canon_tower-left.png') { // Vänster
-                        console.log('left');
-
-                        this.cd = false;
-                        setTimeout(function() {
-                            towers[j].cd = true;
-                        }, 1000);
                     }
-                } */
-
+                }
             }
         }
 
@@ -627,6 +627,14 @@ function Tower(x, y, r, type, id) { // CD == Om tornet kan skada fiender
             if(rStroke >= 70) {
                 rStroke = 0;
             }
+        } else if(this.type == 'super_beam') {
+            ctx.beginPath(); // Målar ut laser stråle
+            ctx.moveTo(this.x + 25, this.y + 25);
+            ctx.lineTo(enemies[0][i].x + 6.25, enemies[0][i].y + 6.25);
+            ctx.strokeStyle = "#000055";
+            ctx.lineWidth = 7;
+            ctx.stroke(); // NÅGOT ÄR FEL HÄR. KOLLA PÅ DET SEN. DET BLIR TVÅ LASRAR.
+            ctx.closePath();
         }
     }
 }

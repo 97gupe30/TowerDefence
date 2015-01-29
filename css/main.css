@@ -87,6 +87,11 @@ body {
     color: white;
 }
 
+#super_beam {
+    background-image: url(../images/super_beam.png);
+    color: white;
+}
+
 #no, #yes {
     padding: 3px;
 }
