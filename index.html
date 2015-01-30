@@ -9,12 +9,19 @@
     <body onload="init()" onkeydown="keyHandler(event)">
         <div id="wrapper">
             <div id="over">
-                <div class="settings"onclick="
+                <div class="settings" onclick="
                                               if(stroke) {
-                                              stroke = false;
+                                               stroke = false;
                                               } else {
-                                              stroke = true;
+                                               stroke = true;
                                               }"><p>Display stroke</p></div>
+                <div class="settings" onclick="if(bgMusic) {
+                                                backgroundMusic.stop();
+                                                bgMusic = false;
+                                               } else {
+                                                backgroundMusic.play();
+                                                bgMusic = true;
+                                               }">Music On/Off</div>
             </div>
             <div id="hp"></div>
             <div id="money"></div>

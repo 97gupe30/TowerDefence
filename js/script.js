@@ -1,5 +1,5 @@
-var level = 8;
-var enemies = [[], 10, 0, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln. INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
+var level = 1;
+var enemies = [[], 3, 0, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln. INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
 var towers = [];
 var towerShots = [];
 var towerCount = 0; // Räknar antal torn som finns ute.
@@ -15,7 +15,7 @@ var superBeam = false; // true == CD är på.
 
 // Värde variabler
 var hp = 100;
-var money = 800;
+var money = 100;
 
 // Booleans
 var genEnemy = true; // Ifall man ska kunna generera nya fiender.
@@ -38,6 +38,9 @@ var backgroundMusic;
 var spritesheets = [];
 var animations = [];
 var spriteCount = 0;
+
+//Musik
+var bgMusic = true;
 
 var map = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -159,6 +162,8 @@ function keyHandler(event) {
         } else if(key == 13) {
             if(map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] == 0) {
                 document.getElementById('infoBox').innerHTML = "You can't place a tower on the road.";
+            } else if(map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] != 0 && map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] != 1) {
+                document.getElementById('infoBox').innerHTML = "You can't place a tower outside the map.";
             } else {
                 moveActive = false;
                 document.getElementById('infoBox').innerHTML = "";
@@ -214,6 +219,8 @@ function keyHandler(event) {
         }      
     } else if(confirmWave && map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] == 0 && key == 80) {
         document.getElementById('infoBox').innerHTML = "You can't start the next wave with a tower on the road.";
+    } else if(confirmWave && map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] != 0 && key == 80 && map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] != 1) {
+        document.getElementById('infoBox').innerHTML = "You can't start the next wave with a tower outside the map.";
     }
 }
 
@@ -592,7 +599,7 @@ function Tower(x, y, r, type, id) { // CD == Om tornet kan skada fiender
                                     }
 
                                 }
-                            }, 1400);
+                            }, 800);
                             setTimeout(function() {
                                 towers[j].cd = true;
                                 console.log('CD');
@@ -607,6 +614,7 @@ function Tower(x, y, r, type, id) { // CD == Om tornet kan skada fiender
     }
 
     var rStroke = 0;
+    rStroke2 = 0;
     this.attackAnimation = function(i) {
         if(this.type == 'tower1') {
             ctx.beginPath(); // Målar ut laser stråle
@@ -628,13 +636,16 @@ function Tower(x, y, r, type, id) { // CD == Om tornet kan skada fiender
                 rStroke = 0;
             }
         } else if(this.type == 'super_beam') {
-            ctx.beginPath(); // Målar ut laser stråle
-            ctx.moveTo(this.x + 25, this.y + 25);
-            ctx.lineTo(enemies[0][i].x + 6.25, enemies[0][i].y + 6.25);
-            ctx.strokeStyle = "#000055";
-            ctx.lineWidth = 7;
-            ctx.stroke(); // NÅGOT ÄR FEL HÄR. KOLLA PÅ DET SEN. DET BLIR TVÅ LASRAR.
+            ctx.beginPath();
+            ctx.arc(this.x + 25, this.y + 25, rStroke, 0, 2*Math.PI);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "red";
+            ctx.stroke();
             ctx.closePath();
+            rStroke2 += 5;
+            if(rStroke2 >= this.r) {
+                rStroke2 = 0;
+            }
         }
     }
 }
