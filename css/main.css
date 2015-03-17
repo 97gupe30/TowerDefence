@@ -35,6 +35,19 @@ body {
     z-index: 10;
 }
 
+#wave {
+    float: left;
+    margin: 15px 0 0 450px;
+    color: white;
+    position: absolute;
+    z-index: 2;
+}
+
+#wave, #money, #hp {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+}
+
 #infoBox {
     font-family: 'Press Start 2P', cursive;
     text-align: center;

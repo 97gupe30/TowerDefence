@@ -1,13 +1,14 @@
 var level = 1;
-var enemies = [[], 3, 0, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln. INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
+var enemies = [[], 3, 0, 0]; // INDEX 0 = Fiende object INDEX 1 = Hur många finder som ska komma på denna leveln.(3 = DEFAULT) INDEX 2 = Antal fiender ute på planen. INDEX 3 = Fiendens hastighet. INDEX 4 = Används till att röra tornen
 var towers = [];
 var towerShots = [];
 var towerCount = 0; // Räknar antal torn som finns ute.
 var currentEnemies = []; // sparar allt om fienderna när man pausar.
 var speed = []; // Sparar fiendernas hastigheter när man pausar
 var menus = new Menu();
-var menuP = 'pause'; // Håller koll på om vi ska pausa eller ta bort pausen.
+var menuP = 'unpause'; // Håller koll på om vi ska pausa eller ta bort pausen.
 var canMove = true;
+var intro = true;
 
 //Skott variabler
 var superBeam = false; // true == CD är på.
@@ -38,6 +39,8 @@ var backgroundMusic;
 var spritesheets = [];
 var animations = [];
 var spriteCount = 0;
+var tpSender = 0;
+var tpReciever = 0;
 
 //Musik
 var bgMusic = true;
@@ -100,8 +103,8 @@ function SpriteSheet(path, frameWidth, frameHeight, id) {
     this.image.src = path;
 }
 
-function Animation(spritesheet, frameSpeed, startFrame, endFrame, x, y, id) {
-
+function Animation(spritesheet, frameSpeed, startFrame, endFrame, x, y, id, towerId) {
+    this.towerId = towerId;
     var animationSequence = [];  // array holding the order of the animation
     var currentFrame = 0;        // the current frame to draw
     var counter = 0;             // keep track of frame rate
@@ -153,20 +156,49 @@ function keyHandler(event) {
     if(moveActive && canMove) { // Flytta torn
         if(key == 65) {
             towers[enemies[3]].x -= 50;
+            for(var i = 0; i < animations.length; i++) {
+                if(animations[i].towerId == towers[enemies[3]].id) {
+                    animations[i].x -= 50;
+                }
+            }
         } else if(key == 68) {
             towers[enemies[3]].x += 50;
+            for(var i = 0; i < animations.length; i++) {
+                if(animations[i].towerId == towers[enemies[3]].id) {
+                    animations[i].x += 50;
+                }
+            }
         } else if(key == 87) {
             towers[enemies[3]].y -= 50;
+            for(var i = 0; i < animations.length; i++) {
+                if(animations[i].towerId == towers[enemies[3]].id) {
+                    animations[i].y -= 50;
+                }
+            }
         } else if(key == 83) {
             towers[enemies[3]].y += 50;
+            for(var i = 0; i < animations.length; i++) {
+                if(animations[i].towerId == towers[enemies[3]].id) {
+                    animations[i].y += 50;
+                }
+            }
         } else if(key == 13) {
             if(map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] == 0) {
                 document.getElementById('infoBox').innerHTML = "You can't place a tower on the road.";
             } else if(map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] != 0 && map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] != 1) {
                 document.getElementById('infoBox').innerHTML = "You can't place a tower outside the map.";
             } else {
-                moveActive = false;
-                document.getElementById('infoBox').innerHTML = "";
+                var check = 0;
+                for(var i = 0; i < towers.length; i++) {
+                    if(towers[enemies[3]].x == towers[i].x && towers[enemies[3]].y == towers[i].y && towers[enemies[3]].id != towers[i].id) {
+                        document.getElementById('infoBox').innerHTML = "You can't place a tower on another tower.";
+                        check = 1;
+                    }
+                }
+                if(check == 0) {
+                    document.getElementById('infoBox').innerHTML = "";
+                    moveActive = false;
+                }
             }
 
         }
@@ -210,7 +242,8 @@ function keyHandler(event) {
     if(confirmWave && map[Math.floor(towers[enemies[3]].y / 50)][Math.floor(towers[enemies[3]].x / 50)] == 1) {
         if(key == 80) {
             document.getElementById('infoBox').innerHTML = "";
-            enemies[1] += 3;
+            var random = Math.round(Math.random() * 4);
+            enemies[1] += random;
             enemies[2] = 0;
             genEnemy = true;
             confirmWave = false;
@@ -231,12 +264,14 @@ function Menu() {
             document.getElementById('over').style.display = 'block';
             document.getElementById('hp').style.opacity = '0.5';
             document.getElementById('money').style.opacity = '0.5';
+            document.getElementById('wave').style.display = 'none';
             settings = true;
             this.pause();
         } else {
             document.getElementById('over').style.display = 'none';
             document.getElementById('hp').style.opacity = '1';
             document.getElementById('money').style.opacity = '1';
+            document.getElementById('wave').style.display = 'block';
             settings = false;
             this.pause();
         }
@@ -270,23 +305,11 @@ function Menu() {
     }
     var text;
     this.pause = function() {
-        if(menuP == 'pause') {
-            menuP = 'unpause';
-            document.getElementById('infoBox').innerHTML = "Press 'P' to unpause.";
-            for(var i = 0; i < enemies.length; i++) {
-                currentEnemies[i] = enemies[i];
-            }
-            for(var i = 0; i < enemies[0].length; i++) {
-                speed[i] = enemies[0][i].speed;
-                enemies[0][i].speed = 0;
-            }
-            test = cdTimeout;
-            clearTimeout(cdTimeout);
-            moveActive = false;
-            genEnemy = false;
-        } else if(menuP == 'unpause') {
+        if(menuP == 'unpause' && towers.length > 0) {
+            canMove = false;
             document.getElementById('infoBox').innerHTML = "";
             menuP = 'pause';
+            intro = false;
             for(var i = 0; i < currentEnemies.length; i++) {
                 enemies[i] = currentEnemies[i];
             }
@@ -296,10 +319,9 @@ function Menu() {
             if(enemies[1] != enemies[2]) {
                 genEnemy = true;
             }
-            for(var i = 0; i < towers.length; i++) {
-                towers[i].cd = true;
-            }
 
+        } else if(menuP == 'unpause' && towers.length <= 0) {
+            document.getElementById('infoBox').innerHTML = "You need to have atleast 1 tower on the map.";
         }
     }
 
@@ -530,7 +552,6 @@ function Tower(x, y, r, type, id) { // CD == Om tornet kan skada fiender
 
                     if(d <= this.r && menuP != 'unpause') { // Ifall fienden är inom tornets Attack Range målar vi ut skottet och lägger till en CD.
                         if(this.cd) { // Lägger till en 0.5 sekunds CD på tornet
-                            console.log(1);
                             spritesheets.push(new SpriteSheet('images/explosion.png', 128, 128, spriteCount));
                             var tempx = this.x,
                                 tempy = this.y,
@@ -547,18 +568,18 @@ function Tower(x, y, r, type, id) { // CD == Om tornet kan skada fiender
                                     }
 
                                 }
-                                for(var i = 0; i < enemies[0].length; i++) {
-                                    dx = enemies[0][i].x - towers[tempId].x - 25;
-                                    dy = enemies[0][i].y - towers[tempId].y - 25;
+                                for(var k = 0; k < enemies[0].length; k++) {
+                                    dx = enemies[0][k].x - towers[tempId].x - 25;
+                                    dy = enemies[0][k].y - towers[tempId].y - 25;
                                     d = Math.sqrt(dx*dx + dy*dy);
-                                    if(d <= 100 && enemies[0][i].cannon == false) {
-                                        enemies[0][i].hp -= 10;
-                                        enemies[0][i].cannon = true;
+                                    if(d <= 100 && enemies[0][k].cannon == false) {
+                                        enemies[0][k].hp -= 10;
+                                        enemies[0][k].cannon = true;
                                     }
 
                                 }
-                                for(var i = 0; i < enemies[0].length; i++) {
-                                    enemies[0][i].cannon = false;
+                                for(var k = 0; k < enemies[0].length; k++) {
+                                    enemies[0][k].cannon = false;
                                 }
 
                             }, 1050);
@@ -574,37 +595,19 @@ function Tower(x, y, r, type, id) { // CD == Om tornet kan skada fiender
                         }
                     }
                 }
-            } else if(this.type == 'super_beam') {
+            } else if(this.type == 'tp_sender') {
                 for(var i = 0; i < enemies[0].length; i++) {
                     dx = enemies[0][i].x - this.x - 25;
                     dy = enemies[0][i].y - this.y - 25;
                     d = Math.sqrt(dx*dx + dy*dy);
-                    var tempId = [],
-                        towerId = this.id;
-                    tempId.push(enemies[0][i].id);
-                    if(d <= this.r) {
-                        if(this.cd) {
-                            spritesheets.push(new SpriteSheet('images/super_beam_animation.png', 50, 50, spriteCount));
-                            animations.push(new Animation(spritesheets[spriteCount], 15, 0, 24, this.x, this.y, spriteCount));
-                            spriteCount++;
-                            
-                            this.attackAnimation(i);
-                            setTimeout(function() {
-                                for(var k = 0; k < enemies[0].length; k++) {
-                                    for(var l = 0; l < tempId.length; l++) {
-                                        if(enemies[0][k].id == tempId[l]) {
-                                            enemies[0][k].hp -= 50;
-                                            towers[j].cd = false;
-                                        }
-                                    }
 
-                                }
-                            }, 800);
-                            setTimeout(function() {
-                                towers[j].cd = true;
-                                console.log('CD');
-                            }, 10000);
-                        }
+                    if(d <= this.r && this.cd) {
+
+
+                        this.cd = false;
+                        cdTimeout = setTimeout(function() {
+                            towers[j].cd = true;
+                        }, 2300);
 
                     }
                 }
@@ -637,14 +640,31 @@ function Tower(x, y, r, type, id) { // CD == Om tornet kan skada fiender
             }
         } else if(this.type == 'super_beam') {
             ctx.beginPath();
-            ctx.arc(this.x + 25, this.y + 25, rStroke, 0, 2*Math.PI);
+            ctx.arc(this.x + 25, this.y + 25, rStroke2, 0, 2*Math.PI);
             ctx.lineWidth = 3;
             ctx.strokeStyle = "red";
             ctx.stroke();
             ctx.closePath();
             rStroke2 += 5;
             if(rStroke2 >= this.r) {
+                for(var k = 0; k < enemies[0].length; k++) {
+                    var dx = enemies[0][k].x - this.x - 25;
+                    var dy = enemies[0][k].y - this.y - 25;
+
+                    var d = Math.sqrt(dx*dx + dy*dy);
+
+                    if(d <= this.r) {
+                        enemies[0][k].hp -= 60;
+                    }
+                }
+                spritesheets.push(new SpriteSheet('images/super_beam_animation.png', 50, 50, spriteCount));
+                animations.push(new Animation(spritesheets[spriteCount], 9, 0, 24, this.x, this.y, spriteCount, this.id));
+                spriteCount++;
                 rStroke2 = 0;
+                this.cd = false;
+                setTimeout(function() {
+                    towers[i].cd = true;
+                }, 5000);
             }
         }
     }
@@ -715,24 +735,21 @@ function buyTower(type, cost, r) {
     if(money >= cost) {
         towers.push(new Tower(0, 50, r, type, towerCount));
         money -= cost;
-    } else {
         clearTimeout(infoBox);
+        towerCount++;
+    } else {
         document.getElementById('infoBox').innerHTML = "You need more money to do that.";
         infoBox = setTimeout(function() {
             document.getElementById('infoBox').innerHTML = "";
         }, 5000);
     }
-    towerCount++;
 }
-
 
 
 
 
 function animate() {
     ctx.clearRect(0, 0, 1000, 500);
-
-    console.log(menuP);
 
     for(var i = 0; i < enemies[0].length; i++) {
         enemies[0][i].render();
@@ -747,6 +764,9 @@ function animate() {
     for(var j = 0; j < towers.length; j++) {
         towers[j].render();
         towers[j].attack(j);
+        if(towers[j].type == 'super_beam' && towers[j].cd == true) {
+            towers[j].attackAnimation(j);
+        }
     }
 
     if(animations.length > 0) {
@@ -763,42 +783,64 @@ function animate() {
         }
     }
 
-
-
     document.getElementById('hp').innerHTML = hp + "HP";
     document.getElementById('money').innerHTML = "Wallet: " + money + "G";
+    document.getElementById('wave').innerHTML = "Wave: " + level;
 }
 
 function generate() {
-    var tempMax; 
-    if(enemies[0].length < enemies[1] && genEnemy) {
-        if(level == 1 || level == 2) {
-            enemies[0].push(new Enemy('banana', 0, 125, 10, 5, 5, 5, enemies[2])); // type, x, y, Ehp, speed, dmg, price, id
-        } else if(level >= 3 && level <= 5) {
-            enemies[0].push(new Enemy('apple', 0, 125, 15, 6, 6, 10, enemies[2]));
-            window.clearInterval(spawn);
-            spawn = window.setInterval(generate, 800);
-        } else if(level > 5 && level <= 7) {
-            enemies[0].push(new Enemy('orange', 0, 125, 35, 8, 10, 20, enemies[2]));
-            window.clearInterval(spawn);
-            spawn = window.setInterval(generate, 500);
-        } else if(level == 7) {
-            if(tempMax == null) {
-                tempMax = enemies[1];
+    if(intro != true) {
+        var tempMax;
+        if(enemies[0].length < enemies[1] && genEnemy) {
+            if(level < 5) {
+                enemies[0].push(new Enemy('banana', 0, 125, 10, 5, 5, 5, enemies[2])); // type, x, y, Ehp, speed, dmg, price, id
+            } else if(level >= 5 && level <= 8) {
+                enemies[0].push(new Enemy('apple', 0, 125, 15, 6, 6, 10, enemies[2]));
+                window.clearInterval(spawn);
+                spawn = window.setInterval(generate, 800);
+            } else if(level > 8 && level <= 9) {
+                enemies[0].push(new Enemy('orange', 0, 125, 35, 8, 10, 20, enemies[2]));
+                window.clearInterval(spawn);
+                spawn = window.setInterval(generate, 500);
+            } else if(level > 9 && level < 12) {
+                if(tempMax == null) {
+                    tempMax = enemies[1];
+                }
+                enemies[1] = 2;
+                enemies[0].push(new Enemy('kokosnot', 0, 125, 50, 5, 20, 20, enemies[2]));
+            } else if(level > 7 && level < 10) {
+                enemies[0].push(new Enemy('vindruva', 0, 125, 5, 13, 3, 20, enemies[2]));
+                window.clearInterval(spawn);
+                spawn = window.setInterval(generate, 350);
+            } else if(level >= 12) {
+                
+                var random = Math.random();
+                console.log(random);
+                window.clearInterval(spawn);
+                if(random <= 0.2) {
+                    spawn = window.setInterval(generate, 1000);
+                    enemies[0].push(new Enemy('banana', 0, 125, 10, 5, 5, 5, enemies[2]));
+                } else if(random > 0.2 && random <= 0.4) {
+                    spawn = window.setInterval(generate, 800);
+                    enemies[0].push(new Enemy('apple', 0, 125, 15, 6, 6, 10, enemies[2]));
+                } else if(random > 0.4 && random <= 0.6) {
+                    spawn = window.setInterval(generate, 500);
+                    enemies[0].push(new Enemy('orange', 0, 125, 35, 8, 10, 20, enemies[2]));
+                } else if(random > 0.6  && random <= 0.8) {
+                    spawn = window.setInterval(generate, 800);
+                    enemies[0].push(new Enemy('kokosnot', 0, 125, 50, 5, 20, 20, enemies[2]));
+                } else if(random > 0.8 && random <= 1) {
+                    spawn = window.setInterval(generate, 350);
+                    enemies[0].push(new Enemy('vindruva', 0, 125, 5, 13, 3, 20, enemies[2]));
+                }
             }
-            enemies[1] = 2;
-            enemies[0].push(new Enemy('kokosnot', 0, 125, 50, 5, 20, 20, enemies[2]));
-        } else if(level > 7) {
-            enemies[0].push(new Enemy('vindruva', 0, 125, 5, 13, 3, 20, enemies[2]));
-            window.clearInterval(spawn);
-            spawn = window.setInterval(generate, 350);
-        }
+                enemies[2]++;               
 
-        enemies[2]++;
 
-        if(enemies[2] == enemies[1]) {
-            genEnemy = false;
-            tempMax = null;
+            if(enemies[2] == enemies[1]) {
+                genEnemy = false;
+                tempMax = null;
+            }
         }
     }
 }
